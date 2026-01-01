@@ -4,6 +4,8 @@ Personal finance dashboard for analyzing DKB (Deutsche Kreditbank) bank exports.
 
 ![Python](https://img.shields.io/badge/python-3.12+-blue)
 ![Streamlit](https://img.shields.io/badge/streamlit-1.52+-red)
+[![Tests](https://github.com/smartschat/finance-dashboard/actions/workflows/test.yml/badge.svg)](https://github.com/smartschat/finance-dashboard/actions/workflows/test.yml)
+[![Lint](https://github.com/smartschat/finance-dashboard/actions/workflows/lint.yml/badge.svg)](https://github.com/smartschat/finance-dashboard/actions/workflows/lint.yml)
 
 ## Features
 
@@ -196,12 +198,24 @@ sudo systemctl reload nginx
 
 Now access at `http://finance.home` (no port needed).
 
+## Development
+
+```bash
+# Run tests
+uv run pytest
+
+# Lint and format
+uv run ruff check
+uv run ruff format
+```
+
 ## Project Structure
 
 ```
 finance-dashboard/
 ├── app.py              # Main Streamlit dashboard
 ├── finance_dashboard/  # Core library modules
+├── tests/              # pytest tests
 ├── categories.json     # Category rules and overrides (gitignored)
 ├── nginx.conf          # nginx reverse proxy config
 ├── pyproject.toml      # Project dependencies
