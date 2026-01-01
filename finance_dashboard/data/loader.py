@@ -7,9 +7,9 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from .parser import parse_german_number, parse_german_date
-from ..config import load_categories
 from ..categorization.rules import categorize_transactions_vectorized
+from ..config import load_categories
+from .parser import parse_german_date, parse_german_number
 
 
 def load_girokonto(filepath):

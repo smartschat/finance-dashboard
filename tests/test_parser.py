@@ -1,9 +1,8 @@
 """Tests for date and number parsing functions."""
 
-import pytest
 from datetime import datetime
 
-from finance_dashboard.data.parser import parse_german_number, parse_german_date
+from finance_dashboard.data.parser import parse_german_date, parse_german_number
 
 
 class TestParseGermanNumber:
