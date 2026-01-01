@@ -207,6 +207,9 @@ uv run pytest
 # Lint and format
 uv run ruff check
 uv run ruff format
+
+# Install pre-commit hooks (runs ruff on commit)
+uv run pre-commit install
 ```
 
 ## Project Structure
