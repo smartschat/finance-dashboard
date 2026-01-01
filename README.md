@@ -103,6 +103,12 @@ From your Mac/PC:
 scp *.csv categories.json pi@<pi-ip>:~/finance-dashboard/
 ```
 
+Or use the sync script (also pulls latest code and restarts the service):
+
+```bash
+./sync-to-pi.sh pi@<pi-ip>
+```
+
 ### 3. Run the dashboard
 
 ```bash
