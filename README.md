@@ -204,6 +204,9 @@ Now access at `http://finance.home` (no port needed).
 # Run tests
 uv run pytest
 
+# Run tests with coverage
+uv run pytest --cov=finance_dashboard
+
 # Lint and format
 uv run ruff check
 uv run ruff format

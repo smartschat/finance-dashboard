@@ -21,3 +21,8 @@ categories.json
 
 # Debug files
 fints_debug.json
+
+# Coverage
+coverage.xml
+.coverage
+htmlcov/

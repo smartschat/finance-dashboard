@@ -22,5 +22,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev
 
-      - name: Run tests
-        run: uv run pytest
+      - name: Run tests with coverage
+        run: |
+          uv run pytest --cov=finance_dashboard --cov-report=term
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          uv run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
