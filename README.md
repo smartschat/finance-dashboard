@@ -36,6 +36,40 @@ uv run streamlit run app.py
 
 Open http://localhost:8501
 
+## Categories Configuration
+
+Transaction categorization is configured via `categories.json` (not tracked in git as it contains personal data). The file structure:
+
+```json
+{
+  "config": {
+    "non_spending_categories": ["Umbuchungen", "Kreditkarte", "Investitionen"],
+    "cc_settlement_patterns": ["kreditkartenabrechnung"]
+  },
+  "rules": {
+    "Groceries": ["rewe", "edeka", "aldi", "lidl"],
+    "Transport": ["db bahn", "uber", "tier"]
+  },
+  "iban_rules": {
+    "Rent": ["DE89370400440532013000"]
+  },
+  "overrides": {
+    "2024-01-15_-50.00_abc123": "Shopping"
+  },
+  "clusters": {
+    "Amazon": ["amzn", "amazon"]
+  }
+}
+```
+
+- **rules**: Map category names to keyword patterns (matched against transaction description)
+- **iban_rules**: Map categories to specific IBANs
+- **overrides**: Manual category assignments for specific transactions (key format: `date_amount_hash`)
+- **clusters**: Group similar merchant names together
+- **config**: Non-spending categories excluded from totals, credit card settlement patterns
+
+If the file doesn't exist, the dashboard starts with empty configuration.
+
 ## Raspberry Pi Deployment
 
 Host the dashboard on a Raspberry Pi for 24/7 access from any device on your network.
@@ -59,12 +93,12 @@ cd finance-dashboard
 uv sync
 ```
 
-### 2. Copy your CSV files
+### 2. Copy your data files
 
 From your Mac/PC:
 
 ```bash
-scp *.csv pi@<pi-ip>:~/finance-dashboard/
+scp *.csv categories.json pi@<pi-ip>:~/finance-dashboard/
 ```
 
 ### 3. Run the dashboard
@@ -168,6 +202,7 @@ Now access at `http://finance.home` (no port needed).
 finance-dashboard/
 ├── app.py              # Main Streamlit dashboard
 ├── finance_dashboard/  # Core library modules
+├── categories.json     # Category rules and overrides (gitignored)
 ├── nginx.conf          # nginx reverse proxy config
 ├── pyproject.toml      # Project dependencies
 └── *.csv               # Your DKB export files (gitignored)
