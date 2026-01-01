@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Financial data (personal)
+*.csv
+categories.json
+
+# Environment variables
+.env
+
+# Debug files
+fints_debug.json
