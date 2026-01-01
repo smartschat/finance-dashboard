@@ -1,8 +1,9 @@
 """Pytest fixtures for finance-dashboard tests."""
 
-import pytest
-import pandas as pd
 from datetime import datetime
+
+import pandas as pd
+import pytest
 
 
 @pytest.fixture
@@ -74,7 +75,9 @@ def sample_girokonto_df():
         "Verwendungszweck": ["Einkauf", "Tanken", "Gehalt Januar"],
         "IBAN": ["DE111", "DE222", "DE89370400440532013000"],
         "Konto": "DE123456",
-        "Monat": pd.Series([datetime(2024, 1, 15), datetime(2024, 1, 16), datetime(2024, 1, 17)]).dt.to_period("M"),
+        "Monat": pd.Series(
+            [datetime(2024, 1, 15), datetime(2024, 1, 16), datetime(2024, 1, 17)]
+        ).dt.to_period("M"),
     }
     return pd.DataFrame(data)
 

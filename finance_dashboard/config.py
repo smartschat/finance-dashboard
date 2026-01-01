@@ -24,7 +24,7 @@ def load_categories(filepath=None):
         filepath = CATEGORIES_FILE
 
     if Path(filepath).exists():
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             return json.load(f)
     return {"config": {}, "rules": {}, "iban_rules": {}, "overrides": {}, "clusters": {}}
 

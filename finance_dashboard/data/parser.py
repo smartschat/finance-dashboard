@@ -1,7 +1,8 @@
 """Date and number parsing functions for German bank export formats."""
 
-import pandas as pd
 from datetime import datetime
+
+import pandas as pd
 
 
 def parse_german_number(value):

@@ -1,6 +1,7 @@
 """Transaction categorization rule engine."""
 
 import re
+
 import pandas as pd
 
 from ..config import load_categories

@@ -1,27 +1,30 @@
-import streamlit as st
-import pandas as pd
+import json
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import json
+import streamlit as st
+
+from finance_dashboard.categorization import (
+    apply_description_clusters,
+    get_legacy_override_key,
+    get_override_key,
+)
 
 # Import from modular structure
 from finance_dashboard.config import (
-    load_categories,
-    save_categories as _save_categories_base,
-    get_non_spend_categories,
-    get_cc_settlement_patterns,
-    hashable_config,
     DEFAULT_CC_SETTLEMENT_PATTERNS,
+    get_non_spend_categories,
+    hashable_config,
+    load_categories,
+)
+from finance_dashboard.config import (
+    save_categories as _save_categories_base,
 )
 from finance_dashboard.data import (
-    load_all_data,
     get_csv_file_manifest,
-)
-from finance_dashboard.categorization import (
-    get_override_key,
-    get_legacy_override_key,
-    apply_description_clusters,
+    load_all_data,
 )
 
 st.set_page_config(page_title="Finanz-Dashboard", page_icon="💰", layout="wide")
@@ -85,10 +88,9 @@ def prepare_combined_data(_giro_dfs, _visa_dfs, overrides_hash, cluster_rules_ha
         combined_df["_legacy_key"] = combined_df.apply(get_legacy_override_key, axis=1)
         combined_df["Kategorie"] = combined_df.apply(
             lambda row: cat_config_overrides.get(
-                row["_override_key"],
-                cat_config_overrides.get(row["_legacy_key"], row["Kategorie"])
+                row["_override_key"], cat_config_overrides.get(row["_legacy_key"], row["Kategorie"])
             ),
-            axis=1
+            axis=1,
         )
         combined_df = combined_df.drop(columns=["_override_key", "_legacy_key"])
 
@@ -161,9 +163,7 @@ st.sidebar.title("Filter")
 
 # Year filter
 available_years = sorted(combined_df["Jahr"].unique(), reverse=True)
-selected_years = st.sidebar.multiselect(
-    "Jahre", available_years, default=available_years
-)
+selected_years = st.sidebar.multiselect("Jahre", available_years, default=available_years)
 
 # Date range filter - updates based on selected years
 if selected_years:
@@ -223,9 +223,7 @@ if active_tab == "Übersicht":
     # Key metrics (exclude non-spending categories to avoid double-counting)
     col1, col2, col3, col4 = st.columns(4)
 
-    real_transactions = filtered_df[
-        ~filtered_df["Kategorie"].isin(non_spend_categories)
-    ]
+    real_transactions = filtered_df[~filtered_df["Kategorie"].isin(non_spend_categories)]
     total_income = real_transactions[real_transactions["Betrag"] > 0]["Betrag"].sum()
     total_expenses = real_transactions[real_transactions["Betrag"] < 0]["Betrag"].sum()
     net_flow = total_income + total_expenses
@@ -248,9 +246,7 @@ if active_tab == "Übersicht":
 
     with col1:
         st.subheader("Monatlicher Cashflow")
-        cashflow_df = filtered_df[
-            ~filtered_df["Kategorie"].isin(non_spend_categories)
-        ]
+        cashflow_df = filtered_df[~filtered_df["Kategorie"].isin(non_spend_categories)]
         monthly = (
             cashflow_df.groupby("Monat")
             .agg({"Betrag": lambda x: (x[x > 0].sum(), x[x < 0].sum())})
@@ -277,32 +273,23 @@ if active_tab == "Übersicht":
                 marker_color="#dc3545",
             )
         )
-        fig.update_layout(
-            barmode="group", xaxis_title="Monat", yaxis_title="Betrag (€)"
-        )
+        fig.update_layout(barmode="group", xaxis_title="Monat", yaxis_title="Betrag (€)")
         st.plotly_chart(fig, width="stretch")
 
     with col2:
         st.subheader("Ausgaben nach Kategorie")
         expenses_only = filtered_df[
-            (filtered_df["Betrag"] < 0)
-            & (~filtered_df["Kategorie"].isin(non_spend_categories))
+            (filtered_df["Betrag"] < 0) & (~filtered_df["Kategorie"].isin(non_spend_categories))
         ].copy()
         expenses_only["Betrag_abs"] = expenses_only["Betrag"].abs()
         category_spending = (
-            expenses_only.groupby("Kategorie")["Betrag_abs"]
-            .sum()
-            .sort_values(ascending=False)
+            expenses_only.groupby("Kategorie")["Betrag_abs"].sum().sort_values(ascending=False)
         )
 
         # Filter out non-spending categories for cleaner view
-        category_spending = category_spending[
-            ~category_spending.index.isin(non_spend_categories)
-        ]
+        category_spending = category_spending[~category_spending.index.isin(non_spend_categories)]
 
-        fig = px.pie(
-            values=category_spending.values, names=category_spending.index, hole=0.4
-        )
+        fig = px.pie(values=category_spending.values, names=category_spending.index, hole=0.4)
         fig.update_traces(textposition="inside", textinfo="percent+label")
         st.plotly_chart(fig, width="stretch")
 
@@ -312,8 +299,7 @@ if active_tab == "Übersicht":
     with col1:
         st.subheader("Tägliche Ausgaben")
         daily_expenses = filtered_df[
-            (filtered_df["Betrag"] < 0)
-            & (~filtered_df["Kategorie"].isin(non_spend_categories))
+            (filtered_df["Betrag"] < 0) & (~filtered_df["Kategorie"].isin(non_spend_categories))
         ].copy()
         daily_expenses["Betrag_abs"] = daily_expenses["Betrag"].abs()
         daily_trend = daily_expenses.groupby("Datum")["Betrag_abs"].sum().reset_index()
@@ -334,9 +320,7 @@ if active_tab == "Übersicht":
             start_date = pd.Timestamp(date_range[0])
             end_date = pd.Timestamp(date_range[1])
             num_months = (
-                (end_date.year - start_date.year) * 12
-                + (end_date.month - start_date.month)
-                + 1
+                (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month) + 1
             )
         else:
             num_months = filtered_df["Monat"].nunique()
@@ -346,12 +330,8 @@ if active_tab == "Übersicht":
         # Total spending per category divided by number of months
         category_totals = expenses_only.groupby("Kategorie")["Betrag_abs"].sum()
         # Filter out non-spending categories
-        category_totals = category_totals[
-            ~category_totals.index.isin(non_spend_categories)
-        ]
-        monthly_avg = (
-            (category_totals / num_months).sort_values(ascending=True).tail(10)
-        )
+        category_totals = category_totals[~category_totals.index.isin(non_spend_categories)]
+        monthly_avg = (category_totals / num_months).sort_values(ascending=True).tail(10)
 
         fig = px.bar(
             x=monthly_avg.values,
@@ -414,11 +394,13 @@ if active_tab == "Übersicht":
     overrides = cat_config.get("overrides", {})
     display_df["_override"] = display_df.apply(
         lambda row: "📝" if row["_key"] in overrides or row["_legacy_key"] in overrides else "",
-        axis=1
+        axis=1,
     )
 
     # Prepare editable dataframe
-    edit_df = display_df[["Datum_str", "Beschreibung", "_override", "Kategorie", "Konto", "Betrag", "_key"]].copy()
+    edit_df = display_df[
+        ["Datum_str", "Beschreibung", "_override", "Kategorie", "Konto", "Betrag", "_key"]
+    ].copy()
     edit_df = edit_df.rename(columns={"Datum_str": "Datum", "_override": " "})
 
     # Use data_editor for category editing
@@ -428,9 +410,13 @@ if active_tab == "Übersicht":
         height=400,
         column_config={
             "Datum": st.column_config.TextColumn("Datum", disabled=True),
-            "Beschreibung": st.column_config.TextColumn("Beschreibung", disabled=True, width="large"),
+            "Beschreibung": st.column_config.TextColumn(
+                "Beschreibung", disabled=True, width="large"
+            ),
             " ": st.column_config.TextColumn(" ", disabled=True, width="small"),
-            "Kategorie": st.column_config.SelectboxColumn("Kategorie", options=all_cats, required=True),
+            "Kategorie": st.column_config.SelectboxColumn(
+                "Kategorie", options=all_cats, required=True
+            ),
             "Konto": st.column_config.TextColumn("Konto", disabled=True),
             "Betrag": st.column_config.NumberColumn("Betrag", format="€%.2f", disabled=True),
             "_key": None,  # Hide the key column
@@ -456,8 +442,7 @@ elif active_tab == "Ausgabentrends":
 
     # Get expense data only (exclude non-spending categories)
     trends_df = filtered_df[
-        (filtered_df["Betrag"] < 0)
-        & (~filtered_df["Kategorie"].isin(non_spend_categories))
+        (filtered_df["Betrag"] < 0) & (~filtered_df["Kategorie"].isin(non_spend_categories))
     ].copy()
     trends_df["Betrag_abs"] = trends_df["Betrag"].abs()
     trends_df["Month"] = trends_df["Datum"].dt.to_period("M").astype(str)
@@ -475,9 +460,7 @@ elif active_tab == "Ausgabentrends":
             "Kategorien zum Vergleichen auswählen",
             available_categories,
             default=(
-                available_categories[:5]
-                if len(available_categories) >= 5
-                else available_categories
+                available_categories[:5] if len(available_categories) >= 5 else available_categories
             ),
             key="trend_categories",
         )
@@ -521,9 +504,7 @@ elif active_tab == "Ausgabentrends":
             xaxis_title="Monat",
             yaxis_title="Ausgaben (€)",
             hovermode="x unified",
-            legend=dict(
-                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-            ),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
         st.plotly_chart(fig, width="stretch")
 
@@ -545,9 +526,7 @@ elif active_tab == "Ausgabentrends":
             # Get values for comparison
             current_3m = cat_data.tail(3).mean()
             previous_3m = (
-                cat_data.tail(6).head(3).mean()
-                if len(cat_data) >= 6
-                else cat_data.head(3).mean()
+                cat_data.tail(6).head(3).mean() if len(cat_data) >= 6 else cat_data.head(3).mean()
             )
             overall_avg = cat_data.mean()
             total = category_totals.get(cat, 0)
@@ -691,12 +670,8 @@ elif active_tab == "Investitionen":
             .reset_index()
         )
         investment_monthly = investment_monthly.sort_values("Monat")
-        investment_monthly["Käufe"] = investment_monthly["Betrag"].apply(
-            lambda x: abs(x[0])
-        )
-        investment_monthly["Verkäufe"] = investment_monthly["Betrag"].apply(
-            lambda x: x[1]
-        )
+        investment_monthly["Käufe"] = investment_monthly["Betrag"].apply(lambda x: abs(x[0]))
+        investment_monthly["Verkäufe"] = investment_monthly["Betrag"].apply(lambda x: x[1])
         investment_monthly["Netto investiert"] = (
             investment_monthly["Käufe"] - investment_monthly["Verkäufe"]
         )
@@ -723,9 +698,7 @@ elif active_tab == "Investitionen":
                     marker_color="#1f77b4",
                 )
             )
-            inv_fig.update_layout(
-                barmode="group", xaxis_title="Monat", yaxis_title="Betrag (€)"
-            )
+            inv_fig.update_layout(barmode="group", xaxis_title="Monat", yaxis_title="Betrag (€)")
             st.plotly_chart(inv_fig, width="stretch")
 
         with col2:
@@ -745,16 +718,12 @@ elif active_tab == "Investitionen":
         st.subheader("Transaktionen")
         investment_table = investment_df.copy()
         investment_table["Datum_str"] = investment_table["Datum"].dt.strftime("%d.%m.%Y")
-        investment_table["Typ"] = np.where(
-            investment_table["Betrag"] < 0, "Kauf", "Verkauf"
-        )
+        investment_table["Typ"] = np.where(investment_table["Betrag"] < 0, "Kauf", "Verkauf")
         investment_table["Betrag_abs"] = investment_table["Betrag"].abs()
         investment_table = investment_table.sort_values("Datum", ascending=False)
 
         st.dataframe(
-            investment_table[
-                ["Datum_str", "Beschreibung", "Konto", "Typ", "Betrag_abs"]
-            ],
+            investment_table[["Datum_str", "Beschreibung", "Konto", "Typ", "Betrag_abs"]],
             width="stretch",
             hide_index=True,
             column_config={
@@ -883,20 +852,14 @@ elif active_tab == "Jahresvergleich":
         ]
 
         year1_monthly = (
-            year1_df[
-                (year1_df["Betrag"] < 0)
-                & (~year1_df["Kategorie"].isin(non_spend_categories))
-            ]
+            year1_df[(year1_df["Betrag"] < 0) & (~year1_df["Kategorie"].isin(non_spend_categories))]
             .groupby("MonthNum")["Betrag"]
             .sum()
             .abs()
             .reindex(range(1, 13), fill_value=0)
         )
         year2_monthly = (
-            year2_df[
-                (year2_df["Betrag"] < 0)
-                & (~year2_df["Kategorie"].isin(non_spend_categories))
-            ]
+            year2_df[(year2_df["Betrag"] < 0) & (~year2_df["Kategorie"].isin(non_spend_categories))]
             .groupby("MonthNum")["Betrag"]
             .sum()
             .abs()
@@ -920,9 +883,7 @@ elif active_tab == "Jahresvergleich":
                 marker_color="#ff7f0e",
             )
         )
-        fig.update_layout(
-            barmode="group", xaxis_title="Monat", yaxis_title="Ausgaben (€)"
-        )
+        fig.update_layout(barmode="group", xaxis_title="Monat", yaxis_title="Ausgaben (€)")
         st.plotly_chart(fig, width="stretch")
 
         st.divider()
@@ -931,20 +892,14 @@ elif active_tab == "Jahresvergleich":
         st.subheader("Ausgaben nach Kategorie im Vergleich")
 
         year1_cat = (
-            year1_df[
-                (year1_df["Betrag"] < 0)
-                & (~year1_df["Kategorie"].isin(non_spend_categories))
-            ]
+            year1_df[(year1_df["Betrag"] < 0) & (~year1_df["Kategorie"].isin(non_spend_categories))]
             .groupby("Kategorie")["Betrag"]
             .sum()
             .abs()
             .sort_values(ascending=False)
         )
         year2_cat = (
-            year2_df[
-                (year2_df["Betrag"] < 0)
-                & (~year2_df["Kategorie"].isin(non_spend_categories))
-            ]
+            year2_df[(year2_df["Betrag"] < 0) & (~year2_df["Kategorie"].isin(non_spend_categories))]
             .groupby("Kategorie")["Betrag"]
             .sum()
             .abs()
@@ -1007,9 +962,7 @@ elif active_tab == "Jahresvergleich":
                 marker_color="#ff7f0e",
             )
         )
-        fig.update_layout(
-            barmode="group", xaxis_title="Kategorie", yaxis_title="Ausgaben (€)"
-        )
+        fig.update_layout(barmode="group", xaxis_title="Kategorie", yaxis_title="Ausgaben (€)")
         st.plotly_chart(fig, width="stretch")
 
 elif active_tab == "Typischer Monat":
@@ -1021,9 +974,7 @@ elif active_tab == "Typischer Monat":
         start_date = pd.Timestamp(date_range[0])
         end_date = pd.Timestamp(date_range[1])
         num_months = (
-            (end_date.year - start_date.year) * 12
-            + (end_date.month - start_date.month)
-            + 1
+            (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month) + 1
         )
     else:
         num_months = filtered_df["Monat"].nunique()
@@ -1059,9 +1010,7 @@ elif active_tab == "Typischer Monat":
     with col1:
         st.subheader("Monatliche Einnahmen")
         income_df = real_df[real_df["Betrag"] > 0].copy()
-        income_by_cat = (
-            income_df.groupby("Kategorie")["Betrag"].sum().sort_values(ascending=False)
-        )
+        income_by_cat = income_df.groupby("Kategorie")["Betrag"].sum().sort_values(ascending=False)
         income_monthly = (income_by_cat / num_months).round(2)
 
         income_table = pd.DataFrame(
@@ -1093,9 +1042,7 @@ elif active_tab == "Typischer Monat":
         expenses_df = real_df[real_df["Betrag"] < 0].copy()
         expenses_df["Betrag_abs"] = expenses_df["Betrag"].abs()
         expenses_by_cat = (
-            expenses_df.groupby("Kategorie")["Betrag_abs"]
-            .sum()
-            .sort_values(ascending=False)
+            expenses_df.groupby("Kategorie")["Betrag_abs"].sum().sort_values(ascending=False)
         )
         expenses_monthly = (expenses_by_cat / num_months).round(2)
 
@@ -1137,17 +1084,13 @@ elif active_tab == "Typischer Monat":
         waterfall_data.append({"Kategorie": cat, "Betrag": -amount, "Type": "expense"})
 
     # Add remaining expenses
-    other_expenses = (
-        expenses_monthly.tail(-10).sum() if len(expenses_monthly) > 10 else 0
-    )
+    other_expenses = expenses_monthly.tail(-10).sum() if len(expenses_monthly) > 10 else 0
     if other_expenses > 0:
         waterfall_data.append(
             {"Kategorie": "Sonstige", "Betrag": -other_expenses, "Type": "expense"}
         )
 
-    waterfall_data.append(
-        {"Kategorie": "Ersparnis", "Betrag": avg_net, "Type": "total"}
-    )
+    waterfall_data.append({"Kategorie": "Ersparnis", "Betrag": avg_net, "Type": "total"})
 
     # Create waterfall chart
     fig = go.Figure(
@@ -1190,7 +1133,12 @@ elif active_tab == "Einstellungen":
     st.write("**Neue Kategorie hinzufügen**")
     col1, col2 = st.columns([3, 1])
     with col1:
-        new_category = st.text_input("Kategoriename", key="new_cat_name", label_visibility="collapsed", placeholder="Neue Kategorie...")
+        new_category = st.text_input(
+            "Kategoriename",
+            key="new_cat_name",
+            label_visibility="collapsed",
+            placeholder="Neue Kategorie...",
+        )
     with col2:
         if st.button("Hinzufügen", key="add_cat_btn"):
             if new_category and new_category not in categories_config["rules"]:
@@ -1218,7 +1166,6 @@ elif active_tab == "Einstellungen":
         current_count = len([k for k in st.session_state[text_key].split("\n") if k.strip()])
 
         with st.expander(f"**{category}** ({current_count} Schlüsselwörter)"):
-
             keywords_text = st.text_area(
                 "Schlüsselwörter (eins pro Zeile)",
                 key=text_key,
@@ -1240,7 +1187,12 @@ elif active_tab == "Einstellungen":
                     settings_message.success(msg)
                     st.toast(msg, icon="✅")
             with col2:
-                new_name = st.text_input("Umbenennen", value=category, key=f"rename_{category}", label_visibility="collapsed")
+                new_name = st.text_input(
+                    "Umbenennen",
+                    value=category,
+                    key=f"rename_{category}",
+                    label_visibility="collapsed",
+                )
             with col3:
                 if st.button("Umbenennen", key=f"rename_btn_{category}"):
                     if new_name and new_name != category:
@@ -1296,9 +1248,7 @@ elif active_tab == "Einstellungen":
             else:
                 fresh_config["clusters"][new_cluster_name] = patterns
                 save_categories(fresh_config)
-                st.session_state.save_success_msg = (
-                    f"Cluster '{new_cluster_name}' hinzugefügt."
-                )
+                st.session_state.save_success_msg = f"Cluster '{new_cluster_name}' hinzugefügt."
                 st.rerun()
 
     if clusters:
@@ -1307,18 +1257,14 @@ elif active_tab == "Einstellungen":
             if pattern_key not in st.session_state:
                 st.session_state[pattern_key] = "\n".join(patterns)
 
-            current_count = len(
-                [p for p in st.session_state[pattern_key].split("\n") if p.strip()]
-            )
+            current_count = len([p for p in st.session_state[pattern_key].split("\n") if p.strip()])
             with st.expander(f"**{cluster_name}** ({current_count} Muster)"):
                 patterns_text = st.text_area(
                     "Muster (eins pro Zeile)",
                     key=pattern_key,
                     height=120,
                 )
-                current_patterns = [
-                    p.strip() for p in patterns_text.split("\n") if p.strip()
-                ]
+                current_patterns = [p.strip() for p in patterns_text.split("\n") if p.strip()]
 
                 col1, col2, col3 = st.columns([2, 1, 1])
                 with col1:
@@ -1329,9 +1275,7 @@ elif active_tab == "Einstellungen":
                             fresh_config = load_categories()
                             fresh_config.setdefault("clusters", {})
                             if cluster_name in fresh_config["clusters"]:
-                                fresh_config["clusters"][
-                                    cluster_name
-                                ] = current_patterns
+                                fresh_config["clusters"][cluster_name] = current_patterns
                                 save_categories(fresh_config)
                                 msg = f"Cluster '{cluster_name}' gespeichert."
                                 settings_message.success(msg)
@@ -1349,9 +1293,9 @@ elif active_tab == "Einstellungen":
                             fresh_config = load_categories()
                             fresh_config.setdefault("clusters", {})
                             if new_name not in fresh_config["clusters"]:
-                                fresh_config["clusters"][new_name] = fresh_config[
-                                    "clusters"
-                                ].pop(cluster_name)
+                                fresh_config["clusters"][new_name] = fresh_config["clusters"].pop(
+                                    cluster_name
+                                )
                                 save_categories(fresh_config)
                                 st.session_state.save_success_msg = (
                                     f"Cluster '{cluster_name}' umbenannt zu '{new_name}'."
@@ -1368,9 +1312,7 @@ elif active_tab == "Einstellungen":
                     if cluster_name in fresh_config["clusters"]:
                         del fresh_config["clusters"][cluster_name]
                         save_categories(fresh_config)
-                        st.session_state.save_success_msg = (
-                            f"Cluster '{cluster_name}' gelöscht."
-                        )
+                        st.session_state.save_success_msg = f"Cluster '{cluster_name}' gelöscht."
                         st.rerun()
     else:
         st.caption("Noch keine Cluster definiert.")
@@ -1412,15 +1354,21 @@ elif active_tab == "Einstellungen":
     st.write("Neue IBAN-Regel:")
     col1, col2, col3 = st.columns([3, 2, 1])
     with col1:
-        new_iban = st.text_input("IBAN", key="new_iban", label_visibility="collapsed", placeholder="DE...")
+        new_iban = st.text_input(
+            "IBAN", key="new_iban", label_visibility="collapsed", placeholder="DE..."
+        )
     with col2:
-        new_iban_cat = st.selectbox("Kategorie", all_categories, key="new_iban_cat", label_visibility="collapsed")
+        new_iban_cat = st.selectbox(
+            "Kategorie", all_categories, key="new_iban_cat", label_visibility="collapsed"
+        )
     with col3:
         if st.button("Hinzufügen", key="add_iban_btn"):
             if new_iban and new_iban.upper() not in iban_rules:
                 categories_config["iban_rules"][new_iban.upper()] = new_iban_cat
                 save_categories(categories_config)
-                st.session_state.save_success_msg = f"IBAN-Regel für {new_iban.upper()} hinzugefügt."
+                st.session_state.save_success_msg = (
+                    f"IBAN-Regel für {new_iban.upper()} hinzugefügt."
+                )
                 st.rerun()
 
     st.divider()
@@ -1436,4 +1384,6 @@ elif active_tab == "Einstellungen":
             st.session_state.save_success_msg = "Manuelle Zuordnungen gelöscht."
             st.rerun()
     else:
-        st.caption("Keine manuellen Zuordnungen. Klicke auf eine Transaktion in der Übersicht, um sie manuell zuzuordnen.")
+        st.caption(
+            "Keine manuellen Zuordnungen. Klicke auf eine Transaktion in der Übersicht, um sie manuell zuzuordnen."
+        )
