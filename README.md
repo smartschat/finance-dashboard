@@ -102,6 +102,21 @@ Transaction categorization is configured via `categories.json` (gitignored as it
 | `clusters` | Group similar merchant names for cleaner reporting |
 | `config` | Non-spending categories excluded from totals, credit card settlement patterns |
 
+### Special Categories
+
+Some category names have special functionality:
+
+| Category | Behavior |
+|----------|----------|
+| `Investitionen` | Dedicated **Investments** tab with buy/sell tracking and cumulative charts |
+| `Abonnements` | Subscription analysis table in **Overview** tab |
+| `Kreditkarte` | Auto-assigned to credit card settlements (detected via `cc_settlement_patterns`) |
+| `Sonstiges` | Default category for transactions matching no rules |
+| `Umbuchungen` | Internal transfers (default excluded from spending calculations) |
+| `Gehalt` | Salary — no special behavior, but suggested in IBAN rules dropdown |
+
+To use the Investments or Subscriptions features, create categories with these exact names (German spelling).
+
 ## Raspberry Pi Deployment
 
 Host the dashboard on a Raspberry Pi for 24/7 access from any device on your network.
