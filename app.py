@@ -1314,6 +1314,42 @@ elif active_tab == "Einstellungen":
                         save_categories(fresh_config)
                         st.session_state.save_success_msg = f"Cluster '{cluster_name}' gelöscht."
                         st.rerun()
+
+                # Show transactions matching this cluster
+                st.divider()
+                st.write("**Zugehörige Transaktionen:**")
+                cluster_transactions = filtered_df[
+                    filtered_df["Beschreibung_cluster"] == cluster_name
+                ].copy()
+                if not cluster_transactions.empty:
+                    cluster_transactions["Datum_str"] = cluster_transactions[
+                        "Datum"
+                    ].dt.strftime("%d.%m.%Y")
+                    cluster_transactions = cluster_transactions.sort_values(
+                        "Datum", ascending=False
+                    )
+                    st.dataframe(
+                        cluster_transactions[
+                            ["Datum_str", "Beschreibung", "Kategorie", "Konto", "Betrag"]
+                        ],
+                        width="stretch",
+                        height=min(300, 35 * len(cluster_transactions) + 38),
+                        hide_index=True,
+                        column_config={
+                            "Datum_str": st.column_config.TextColumn("Datum"),
+                            "Beschreibung": st.column_config.TextColumn(
+                                "Beschreibung", width="large"
+                            ),
+                            "Betrag": st.column_config.NumberColumn(
+                                "Betrag", format="€%.2f"
+                            ),
+                        },
+                    )
+                    total = cluster_transactions["Betrag"].sum()
+                    count = len(cluster_transactions)
+                    st.caption(f"{count} Transaktionen, Summe: €{total:,.2f}")
+                else:
+                    st.caption("Keine Transaktionen im gewählten Zeitraum.")
     else:
         st.caption("Noch keine Cluster definiert.")
 
@@ -1385,5 +1421,5 @@ elif active_tab == "Einstellungen":
             st.rerun()
     else:
         st.caption(
-            "Keine manuellen Zuordnungen. Klicke auf eine Transaktion in der Übersicht, um sie manuell zuzuordnen."
+            "Keine manuellen Zuordnungen. Klicke auf eine Transaktion in der Übersicht, um sie manuell zuzuordnen."  # noqa: E501
         )
