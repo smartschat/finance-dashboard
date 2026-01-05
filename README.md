@@ -7,6 +7,9 @@ Personal finance dashboard for analyzing DKB (Deutsche Kreditbank) bank exports.
 [![Tests](https://github.com/smartschat/finance-dashboard/actions/workflows/test.yml/badge.svg)](https://github.com/smartschat/finance-dashboard/actions/workflows/test.yml)
 [![Lint](https://github.com/smartschat/finance-dashboard/actions/workflows/lint.yml/badge.svg)](https://github.com/smartschat/finance-dashboard/actions/workflows/lint.yml)
 
+![Finance Dashboard Screenshot](finance_dashboard.png)
+*Screenshot showing synthetic demo data*
+
 ## Features
 
 - **CSV Import**: Load Girokonto and Visa credit card exports from DKB
