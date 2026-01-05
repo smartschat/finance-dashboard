@@ -15,6 +15,7 @@ wheels/
 # Financial data (personal)
 *.csv
 categories.json
+synthetic_data/
 
 # Environment variables
 .env
