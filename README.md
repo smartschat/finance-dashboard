@@ -10,6 +10,17 @@ Personal finance dashboard for analyzing DKB (Deutsche Kreditbank) bank exports.
 ![Finance Dashboard Screenshot](finance_dashboard.png)
 *Screenshot showing synthetic demo data*
 
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start (Local)](#quick-start-local)
+- [Categories Configuration](#categories-configuration)
+- [Raspberry Pi Deployment](#raspberry-pi-deployment)
+- [Development](#development)
+- [Project Structure](#project-structure)
+- [Exporting from DKB](#exporting-from-dkb)
+- [License](#license)
+
 ## Features
 
 - **CSV Import**: Load Girokonto and Visa credit card exports from DKB
