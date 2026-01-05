@@ -12,8 +12,9 @@ Personal finance dashboard for analyzing DKB (Deutsche Kreditbank) bank exports.
 
 ## Table of Contents
 
+- [Why This Tool?](#why-this-tool)
 - [Features](#features)
-- [Quick Start (Local)](#quick-start-local)
+- [Quick Start](#quick-start)
 - [Categories Configuration](#categories-configuration)
 - [Raspberry Pi Deployment](#raspberry-pi-deployment)
 - [Development](#development)
@@ -21,19 +22,31 @@ Personal finance dashboard for analyzing DKB (Deutsche Kreditbank) bank exports.
 - [Exporting from DKB](#exporting-from-dkb)
 - [License](#license)
 
+## Why This Tool?
+
+DKB provides CSV exports but no built-in analytics. This dashboard fills that gap with:
+
+- **Privacy-first**: All data stays local, no cloud services
+- **German bank format support**: Parses DKB's specific CSV format (Girokonto + Visa)
+- **Customizable categories**: Define your own rules for auto-categorization
+- **Self-hostable**: Run on a Raspberry Pi for 24/7 access on your home network
+
 ## Features
 
 - **CSV Import**: Load Girokonto and Visa credit card exports from DKB
-- **Auto-Categorization**: Transactions automatically categorized (Groceries, Transport, Subscriptions, etc.)
+- **Auto-Categorization**: Transactions automatically categorized based on keywords and IBAN rules
+- **Manual Overrides**: Recategorize individual transactions directly in the UI
 - **Multiple Views**:
-  - Overview with key metrics and charts
-  - Spending trends over time
-  - Year-over-year comparison
-  - Typical month budget analysis
+  - **Overview**: Key metrics, monthly cashflow, category breakdown, daily spending
+  - **Spending Trends**: Track category spending over time with trend analysis
+  - **Investments**: Separate view for investment transactions (buys/sells)
+  - **Year Comparison**: Compare spending between years by category
+  - **Typical Month**: Average monthly budget breakdown with waterfall chart
+- **Transaction Clustering**: Group similar merchants (e.g., all "REWE" variations) and view transactions per cluster
 - **Filtering**: By year, date range, account, and category
-- **Search**: Find specific transactions
+- **Search**: Find specific transactions instantly
 
-## Quick Start (Local)
+## Quick Start
 
 ```bash
 # Clone the repo
@@ -52,171 +65,75 @@ uv run streamlit run app.py
 
 Open http://localhost:8501
 
+On first run, `categories.json` is created automatically with empty configuration. Add your categorization rules via the Settings tab in the UI.
+
 ## Categories Configuration
 
-Transaction categorization is configured via `categories.json` (not tracked in git as it contains personal data). The file structure:
+Transaction categorization is configured via `categories.json` (gitignored as it contains personal data):
 
 ```json
 {
-  "config": {
-    "non_spending_categories": ["Umbuchungen", "Kreditkarte", "Investitionen"],
-    "cc_settlement_patterns": ["kreditkartenabrechnung"]
-  },
   "rules": {
     "Groceries": ["rewe", "edeka", "aldi", "lidl"],
     "Transport": ["db bahn", "uber", "tier"]
   },
   "iban_rules": {
-    "Rent": ["DE89370400440532013000"]
+    "DE89370400440532013000": "Rent",
+    "DE12345678901234567890": "Salary"
   },
   "overrides": {
     "2024-01-15_-50.00_abc123": "Shopping"
   },
   "clusters": {
     "Amazon": ["amzn", "amazon"]
+  },
+  "config": {
+    "non_spend_categories": ["Umbuchungen", "Kreditkarte", "Investitionen"],
+    "cc_settlement_patterns": ["kreditkartenabrechnung"]
   }
 }
 ```
 
-- **rules**: Map category names to keyword patterns (matched against transaction description)
-- **iban_rules**: Map categories to specific IBANs
-- **overrides**: Manual category assignments for specific transactions (key format: `date_amount_hash`)
-- **clusters**: Group similar merchant names together
-- **config**: Non-spending categories excluded from totals, credit card settlement patterns
-
-If the file doesn't exist, the dashboard starts with empty configuration.
+| Key | Description |
+|-----|-------------|
+| `rules` | Map category names to keyword patterns (matched against description) |
+| `iban_rules` | Map specific IBANs to categories (e.g., landlord IBAN → "Rent") |
+| `overrides` | Manual category assignments for specific transactions |
+| `clusters` | Group similar merchant names for cleaner reporting |
+| `config` | Non-spending categories excluded from totals, credit card settlement patterns |
 
 ## Raspberry Pi Deployment
 
 Host the dashboard on a Raspberry Pi for 24/7 access from any device on your network.
 
-### Prerequisites
-
-- Raspberry Pi 4 or 5 (2GB+ RAM recommended)
-- Raspberry Pi OS (64-bit)
-- SSH access to the Pi
-
-### 1. Install uv and clone the repo
+### Quick Setup
 
 ```bash
-# Install uv
+# On the Pi: Install uv and clone
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source ~/.local/bin/env
-
-# Clone and install
 git clone git@github.com:smartschat/finance-dashboard.git
 cd finance-dashboard
 uv sync
-```
 
-### 2. Copy your data files
-
-From your Mac/PC:
-
-```bash
+# From your Mac/PC: Copy data files
 scp *.csv categories.json pi@<pi-ip>:~/finance-dashboard/
-```
 
-Or use the sync script (also pulls latest code and restarts the service):
-
-```bash
-./sync-to-pi.sh pi@<pi-ip>
-```
-
-### 3. Run the dashboard
-
-```bash
+# On the Pi: Run the dashboard
 uv run streamlit run app.py --server.address 0.0.0.0
 ```
 
 Access at `http://<pi-ip>:8501`
 
-### 4. Run as a service (auto-start on boot)
+### Advanced Setup
 
-Create a systemd service:
+For a production setup with systemd service, Pi-hole DNS (`http://finance.home`), and nginx reverse proxy, see **[PI_SETUP.md](PI_SETUP.md)** for the full guide.
 
-```bash
-sudo tee /etc/systemd/system/finance-dashboard.service << EOF
-[Unit]
-Description=Finance Dashboard
-After=network.target
-
-[Service]
-Type=simple
-User=$USER
-WorkingDirectory=$HOME/finance-dashboard
-ExecStart=$HOME/.local/bin/uv run streamlit run app.py --server.address 0.0.0.0 --server.port 8501
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-```
-
-Enable and start:
+Use `sync-to-pi.sh` to sync data and restart the service:
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable finance-dashboard
-sudo systemctl start finance-dashboard
+./sync-to-pi.sh pi@<pi-ip>
 ```
-
-Check status:
-
-```bash
-sudo systemctl status finance-dashboard
-```
-
-### 5. Nice hostname with Pi-hole (optional)
-
-Instead of accessing via IP, use `http://finance.home`.
-
-> **Note:** Use `.home` instead of `.local` because macOS reserves `.local` for mDNS (Bonjour), which causes DNS resolution conflicts.
-
-**Install Pi-hole:**
-
-```bash
-curl -sSL https://install.pi-hole.net | bash
-```
-
-**Change Pi-hole web port** (to free port 80 for nginx):
-
-```bash
-sudo pihole-FTL --config webserver.port 8081
-sudo systemctl restart pihole-FTL
-```
-
-**Add custom DNS entry** (Pi-hole v6 uses `/etc/hosts`):
-
-```bash
-echo "192.168.68.110 finance.home" | sudo tee -a /etc/hosts
-sudo systemctl restart pihole-FTL
-```
-
-**Configure your router** to use the Pi as DNS server (Primary DNS = Pi's IP).
-
-### 6. Remove port with nginx (optional)
-
-Access via `http://finance.home` instead of `http://finance.home:8501`.
-
-**Install nginx:**
-
-```bash
-sudo apt install nginx
-```
-
-**Add the config:**
-
-```bash
-sudo cp nginx.conf /etc/nginx/sites-available/finance
-sudo ln -s /etc/nginx/sites-available/finance /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-Now access at `http://finance.home` (no port needed).
 
 ## Development
 
@@ -231,7 +148,7 @@ uv run pytest --cov=finance_dashboard
 uv run ruff check
 uv run ruff format
 
-# Install pre-commit hooks (runs ruff on commit)
+# Install pre-commit hooks
 uv run pre-commit install
 ```
 
@@ -239,13 +156,18 @@ uv run pre-commit install
 
 ```
 finance-dashboard/
-├── app.py              # Main Streamlit dashboard
-├── finance_dashboard/  # Core library modules
-├── tests/              # pytest tests
-├── categories.json     # Category rules and overrides (gitignored)
-├── nginx.conf          # nginx reverse proxy config
-├── pyproject.toml      # Project dependencies
-└── *.csv               # Your DKB export files (gitignored)
+├── app.py                 # Main Streamlit dashboard
+├── finance_dashboard/     # Core library modules
+│   ├── config.py          # Configuration loading
+│   ├── data/              # CSV parsing and loading
+│   └── categorization/    # Rules, overrides, clustering
+├── tests/                 # pytest tests
+├── categories.json        # Category rules (gitignored)
+├── *.csv                  # DKB export files (gitignored)
+├── PI_SETUP.md            # Detailed Raspberry Pi setup guide
+├── nginx.conf             # nginx reverse proxy config
+├── sync-to-pi.sh          # Script to sync data to Pi
+└── pyproject.toml         # Project dependencies
 ```
 
 ## Exporting from DKB
