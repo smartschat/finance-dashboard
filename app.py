@@ -1322,9 +1322,9 @@ elif active_tab == "Einstellungen":
                     filtered_df["Beschreibung_cluster"] == cluster_name
                 ].copy()
                 if not cluster_transactions.empty:
-                    cluster_transactions["Datum_str"] = cluster_transactions[
-                        "Datum"
-                    ].dt.strftime("%d.%m.%Y")
+                    cluster_transactions["Datum_str"] = cluster_transactions["Datum"].dt.strftime(
+                        "%d.%m.%Y"
+                    )
                     cluster_transactions = cluster_transactions.sort_values(
                         "Datum", ascending=False
                     )
@@ -1340,9 +1340,7 @@ elif active_tab == "Einstellungen":
                             "Beschreibung": st.column_config.TextColumn(
                                 "Beschreibung", width="large"
                             ),
-                            "Betrag": st.column_config.NumberColumn(
-                                "Betrag", format="€%.2f"
-                            ),
+                            "Betrag": st.column_config.NumberColumn("Betrag", format="€%.2f"),
                         },
                     )
                     total = cluster_transactions["Betrag"].sum()
