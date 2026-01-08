@@ -16,7 +16,6 @@ Personal finance dashboard for analyzing DKB (Deutsche Kreditbank) bank exports.
 - [Features](#features)
 - [Quick Start](#quick-start)
 - [Categories Configuration](#categories-configuration)
-- [Raspberry Pi Deployment](#raspberry-pi-deployment)
 - [Development](#development)
 - [Project Structure](#project-structure)
 - [Exporting from DKB](#exporting-from-dkb)
@@ -29,7 +28,7 @@ DKB provides CSV exports but no built-in analytics. This dashboard fills that ga
 - **Privacy-first**: All data stays local, no cloud services
 - **German bank format support**: Parses DKB's specific CSV format (Girokonto + Visa)
 - **Customizable categories**: Define your own rules for auto-categorization
-- **Self-hostable**: Run on a Raspberry Pi for 24/7 access on your home network
+- **Self-hostable**: Deploy on any server for 24/7 access on your network
 
 ## Features
 
@@ -116,19 +115,6 @@ Some category names have special functionality:
 | `Gehalt` | Salary — no special behavior, but suggested in IBAN rules dropdown |
 
 To use the Investments or Subscriptions features, create categories with these exact names (German spelling).
-
-## Raspberry Pi Deployment
-
-Host the dashboard on a Raspberry Pi for 24/7 access at `http://finance.home`.
-
-See [homelab](https://github.com/smartschat/homelab) for setup instructions and deployment scripts.
-
-Quick deploy from dev machine:
-
-```bash
-cd ~/projects/homelab
-./scripts/deploy.sh finance-dashboard
-```
 
 ## Development
 
