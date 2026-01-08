@@ -119,35 +119,15 @@ To use the Investments or Subscriptions features, create categories with these e
 
 ## Raspberry Pi Deployment
 
-Host the dashboard on a Raspberry Pi for 24/7 access from any device on your network.
+Host the dashboard on a Raspberry Pi for 24/7 access at `http://finance.home`.
 
-### Quick Setup
+See [homelab](https://github.com/smartschat/homelab) for setup instructions and deployment scripts.
 
-```bash
-# On the Pi: Install uv and clone
-curl -LsSf https://astral.sh/uv/install.sh | sh
-source ~/.local/bin/env
-git clone git@github.com:smartschat/finance-dashboard.git
-cd finance-dashboard
-uv sync
-
-# From your Mac/PC: Copy data files
-scp *.csv categories.json pi@<pi-ip>:~/finance-dashboard/
-
-# On the Pi: Run the dashboard
-uv run streamlit run app.py --server.address 0.0.0.0
-```
-
-Access at `http://<pi-ip>:8501`
-
-### Advanced Setup
-
-For a production setup with systemd service, Pi-hole DNS (`http://finance.home`), and nginx reverse proxy, see **[PI_SETUP.md](PI_SETUP.md)** for the full guide.
-
-Use `sync-to-pi.sh` to sync data and restart the service:
+Quick deploy from dev machine:
 
 ```bash
-./sync-to-pi.sh pi@<pi-ip>
+cd ~/projects/homelab
+./scripts/deploy.sh finance-dashboard
 ```
 
 ## Development
@@ -179,9 +159,6 @@ finance-dashboard/
 ├── tests/                 # pytest tests
 ├── categories.json        # Category rules (gitignored)
 ├── *.csv                  # DKB export files (gitignored)
-├── PI_SETUP.md            # Detailed Raspberry Pi setup guide
-├── nginx.conf             # nginx reverse proxy config
-├── sync-to-pi.sh          # Script to sync data to Pi
 └── pyproject.toml         # Project dependencies
 ```
 
