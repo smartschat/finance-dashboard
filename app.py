@@ -41,6 +41,15 @@ st.markdown(
     }
     .positive { color: #28a745; }
     .negative { color: #dc3545; }
+
+    /* Fix date picker popover positioning - center on screen */
+    [data-baseweb="popover"]:has([data-baseweb="calendar"]) {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 9999 !important;
+    }
 </style>
 """,
     unsafe_allow_html=True,
