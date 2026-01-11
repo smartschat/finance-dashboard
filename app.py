@@ -1,4 +1,5 @@
 import json
+import os
 
 import numpy as np
 import pandas as pd
@@ -145,7 +146,10 @@ def initialize_session_state():
 initialize_session_state()
 
 # Load data (with file manifest for cache invalidation)
-giro_dfs, visa_dfs, parse_failures = load_all_data(get_csv_file_manifest())
+data_dir = os.environ.get("DATA_DIR", ".")
+giro_dfs, visa_dfs, parse_failures = load_all_data(
+    get_csv_file_manifest(data_dir), data_dir=data_dir
+)
 categories_config = load_categories()
 
 # Get configurable values
